@@ -21,16 +21,22 @@ proc processClient(this: ref Forwarder, client: AsyncSocket) {.async.} =
       echo "in client has data loop"
       let data = await client.recv(1024)
       echo "got data: " & data
-      await remote.send(data)
+      try:
+        await remote.send(data)
+      except:
+        echo getCurrentExceptionMsg()
     client.close()
     remote.close()
 
   proc remoteHasData() {.async.} =
-    while not remote.isClosed and not remote.isClosed:
+    while not remote.isClosed and not client.isClosed:
       echo " in remote has data loop"
       let data = await remote.recv(1024)
       echo "got data: " & data
-      await client.send(data)
+      try:
+        await client.send(data)
+      except:
+        echo getCurrentExceptionMsg()
     client.close()
     remote.close()
   
@@ -57,7 +63,7 @@ proc newForwarder(opts: ForwardOptions): ref Forwarder =
   result = new(Forwarder)
   result.options = opts
 
-let opts = ForwardOptions(listenAddr:"127.0.0.1", listenPort:11000.Port, toAddr:"127.0.0.1", toPort:6379.Port)
+let opts = ForwardOptions(listenAddr:"127.0.0.1", listenPort:11000.Port, toAddr:"127.0.0.1", toPort:8000.Port)
 var f = newForwarder(opts)
 asyncCheck f.serve()
 runForever()
